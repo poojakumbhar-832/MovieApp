@@ -20,6 +20,8 @@ class TopRatedViewController: UIViewController{
     var searchBar = UISearchBar()
     var searchArray = [result]()
     var searchFlag = false
+    private let refreshControl = UIRefreshControl()
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -29,21 +31,39 @@ class TopRatedViewController: UIViewController{
         topRatedCollectionView.dataSource = self
         registerNib()
         createSearchBar()
-        let service = Service(baseUrl:"https://api.themoviedb.org/3/movie/top_rated?api_key=a07e22bc18f5cb106bfe4cc1f83ad8ed")
-        service.getCountryNameFrom()
-        service.completionHandler {[weak self] (movies, status, message) in
-            if status{
-                guard let self = self else {return}
-                guard let _movies = movies else{return}
-                self.movies = _movies.results
-                self.topRatedCollectionView.reloadData()
-            }
+        getDataFromServer()
+        refreshControl.tintColor = UIColor(red:0.25, green:0.72, blue:0.85, alpha:1.0)
+        refreshControl.attributedTitle = NSAttributedString(string: "Pull to refresh")
+        if #available(iOS 10.0, *) {
+            topRatedCollectionView.refreshControl = refreshControl
+        } else {
+            topRatedCollectionView.addSubview(refreshControl)
         }
+        refreshControl.addTarget(self, action: #selector(refreshData(_:)), for: .valueChanged)
+       
+    }
+    func getDataFromServer()  {
+        let service = Service(baseUrl:"https://api.themoviedb.org/3/movie/top_rated?api_key=a07e22bc18f5cb106bfe4cc1f83ad8ed")
+               service.getCountryNameFrom()
+               service.completionHandler {[weak self] (movies, status, message) in
+                   if status{
+                       guard let self = self else {return}
+                       guard let _movies = movies else{return}
+                       self.movies = _movies.results
+                       self.topRatedCollectionView.reloadData()
+                   }
+               }
     }
    func registerNib()  {
        let nibCell = UINib (nibName: CellID, bundle: nil)
              topRatedCollectionView.register(nibCell, forCellWithReuseIdentifier: CellID)
    }
+    @objc private func refreshData(_ sender: Any) {
+        // Fetch Weather Data
+        //fetchWeatherData()
+        getDataFromServer()
+        refreshControl.endRefreshing()
+    }
 
     func createSearchBar(){
         
@@ -51,6 +71,7 @@ class TopRatedViewController: UIViewController{
         searchBar.showsCancelButton = false
         searchBar.placeholder = "Search"
         searchBar.delegate = self
+        searchBar.searchTextField.backgroundColor = UIColor.white
         self.navigationItem.titleView = searchBar
     }
 }

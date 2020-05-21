@@ -20,6 +20,7 @@ class NowPlayingViewController: UIViewController{
     var searchBar = UISearchBar()
     var searchArray = [result]()
     var searchFlag = false
+    private let refreshControl = UIRefreshControl()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -29,6 +30,17 @@ class NowPlayingViewController: UIViewController{
         NowPlayingCollectionView.dataSource = self
         registerNib()
         createSearchBar()
+        getDataFromServer()
+        refreshControl.tintColor = UIColor(red:0.25, green:0.72, blue:0.85, alpha:1.0)
+        refreshControl.attributedTitle = NSAttributedString(string: "Pull to refresh")
+        if #available(iOS 10.0, *) {
+            NowPlayingCollectionView.refreshControl = refreshControl
+        } else {
+            NowPlayingCollectionView.addSubview(refreshControl)
+        }
+        refreshControl.addTarget(self, action: #selector(refreshData(_:)), for: .valueChanged)
+    }
+    func getDataFromServer()  {
         let service = Service(baseUrl:"https://api.themoviedb.org/3/movie/now_playing?api_key=a07e22bc18f5cb106bfe4cc1f83ad8ed")
         service.getCountryNameFrom()
         service.completionHandler {[weak self] (movies, status, message) in
@@ -39,6 +51,12 @@ class NowPlayingViewController: UIViewController{
                 self.NowPlayingCollectionView.reloadData()
             }
         }
+    }
+    @objc private func refreshData(_ sender: Any) {
+        // Fetch Weather Data
+        //fetchWeatherData()
+        getDataFromServer()
+        refreshControl.endRefreshing()
     }
    func registerNib()  {
        let nibCell = UINib (nibName: CellID, bundle: nil)
@@ -51,6 +69,7 @@ class NowPlayingViewController: UIViewController{
         searchBar.showsCancelButton = false
         searchBar.placeholder = "Search"
         searchBar.delegate = self
+        searchBar.searchTextField.backgroundColor = UIColor.white
         self.navigationItem.titleView = searchBar
     }
     
